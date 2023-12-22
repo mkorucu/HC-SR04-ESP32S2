@@ -36,12 +36,10 @@
  *
  * BSD Licensed as described in the file LICENSE
  */
-#include <esp_idf_lib_helpers.h>
 #include "ultrasonic.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_timer.h>
-#include <ets_sys.h>
 
 #define TRIGGER_LOW_DELAY 4
 #define TRIGGER_HIGH_DELAY 10
@@ -49,18 +47,10 @@
 #define ROUNDTRIP_M 5800.0f
 #define ROUNDTRIP_CM 58
 
-#if HELPER_TARGET_IS_ESP32
 static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 #define PORT_ENTER_CRITICAL portENTER_CRITICAL(&mux)
 #define PORT_EXIT_CRITICAL portEXIT_CRITICAL(&mux)
 
-#elif HELPER_TARGET_IS_ESP8266
-#define PORT_ENTER_CRITICAL portENTER_CRITICAL()
-#define PORT_EXIT_CRITICAL portEXIT_CRITICAL()
-
-#else
-#error cannot identify the target
-#endif
 
 #define timeout_expired(start, len) ((esp_timer_get_time() - (start)) >= (len))
 
@@ -87,9 +77,9 @@ esp_err_t ultrasonic_measure_raw(const ultrasonic_sensor_t *dev, uint32_t max_ti
 
     // Ping: Low for 2..4 us, then high 10 us
     CHECK(gpio_set_level(dev->trigger_pin, 0));
-    ets_delay_us(TRIGGER_LOW_DELAY);
+    esp_rom_delay_us(TRIGGER_LOW_DELAY);
     CHECK(gpio_set_level(dev->trigger_pin, 1));
-    ets_delay_us(TRIGGER_HIGH_DELAY);
+    esp_rom_delay_us(TRIGGER_HIGH_DELAY);
     CHECK(gpio_set_level(dev->trigger_pin, 0));
 
     // Previous ping isn't ended

@@ -10,8 +10,9 @@ extern "C"{
 }
 /*    Ultrasonic defines  */
 #define MAX_DISTANCE_CM 500 // 5m max
-#define TRIGGER_GPIO GPIO_NUM_5
-#define ECHO_GPIO GPIO_NUM_6
+#define TRIGGER_GPIO GPIO_NUM_17
+#define ECHO_GPIO GPIO_NUM_16
+#define MEASURE_FREQ_MS 1000
 /*    Ultrasonic defines end*/
 
 void ultrasonic_test(void *pvParameters)
@@ -52,12 +53,12 @@ void ultrasonic_test(void *pvParameters)
             *dist = distance * 100;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(MEASURE_FREQ_MS));
     }
 }
 
 void app_main()
-{  
+{
     float distance = -1;
     xTaskCreate(ultrasonic_test, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, &distance, 5, NULL);
 }
