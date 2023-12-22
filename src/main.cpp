@@ -15,7 +15,7 @@ extern "C"{
 #define MEASURE_FREQ_MS 1000
 /*    Ultrasonic defines end*/
 
-void ultrasonic_test(void *pvParameters)
+void ultrasonic_measure(void *pvParameters)
 {
     ultrasonic_sensor_t sensor = {
         .trigger_pin = TRIGGER_GPIO,
@@ -27,38 +27,35 @@ void ultrasonic_test(void *pvParameters)
     float *dist = (float*)pvParameters;
     while (true)
     {
-        float distance;
-        esp_err_t res = ultrasonic_measure(&sensor, MAX_DISTANCE_CM, &distance);
-        if (res != ESP_OK)
+        esp_err_t res = ultrasonic_measure(&sensor, MAX_DISTANCE_CM, dist);
+        switch (res)
         {
-            printf("Error %d: ", res);
-            switch (res)
-            {
-                case ESP_ERR_ULTRASONIC_PING:
-                    printf("Cannot ping (device is in invalid state)\n");
-                    break;
-                case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
-                    printf("Ping timeout (no device found)\n");
-                    break;
-                case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
-                    printf("Echo timeout (i.e. distance too big)\n");
-                    break;
-                default:
-                    printf("%s\n", esp_err_to_name(res));
-            }
+            case ESP_OK:
+                *dist = *dist * 100;                
+                printf("Distance: %0.1f cm\n", *dist);
+                break;
+            case ESP_ERR_ULTRASONIC_PING:
+                printf("Cannot ping (device is in invalid state)\n");
+                break;
+            case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
+                printf("Ping timeout (no device found)\n");
+                break;
+            case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
+                printf("Echo timeout (i.e. distance too big)\n");
+                break;
+            default:
+                printf("%s\n", esp_err_to_name(res));
         }
-        else
-        {
-            printf("Distance: %0.1f cm\n", distance*100);
-            *dist = distance * 100;
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(MEASURE_FREQ_MS));
+        vTaskDelay(MEASURE_FREQ_MS / portTICK_PERIOD_MS);
     }
 }
 
 void app_main()
 {
     float distance = -1;
-    xTaskCreate(ultrasonic_test, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, &distance, 5, NULL);
+    xTaskCreate(ultrasonic_measure, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, &distance, 5, NULL);
+    while(1)
+    {
+        vTaskDelay(pdTICKS_TO_MS(1000));
+    }
 }
